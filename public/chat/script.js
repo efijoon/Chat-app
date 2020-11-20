@@ -29,6 +29,7 @@ let roomToJoin;
 function sendMessage() {
 	let msg = $('#textbox').val();
 	let senderName = $('#sender-name').val();
+	console.log(senderName);
 	if(msg == '') return;
 
 	socket.emit('newMessage', { msg, id: socket.id, senderName });

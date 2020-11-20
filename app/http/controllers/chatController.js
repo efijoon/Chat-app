@@ -7,7 +7,10 @@ class chatController extends controller {
 
     async index(req, res, next) {
         try {
-            const users = await User.find().select('username email image');
+            const allUsers = await User.find().select('username email image');
+
+            // Filtering the current user out of user list
+            let users = allUsers.filter(user => user.email !== req.user.email);
 
             res.render('chat/chat', { title: 'گفتگو', users, layout: 'chat/chat' });
 
@@ -21,53 +24,60 @@ io.on('connection', async (socket) => {
     console.log('Connected...');
 
     socket.on('newMessage', async (data) => {
-        let exist;
-        const theRoom = Object.keys(socket.rooms)[1];
+        let exist = false;
+        let rooms = Object.keys(socket.rooms);
 
-        const rooms = await Chat.find();
-        if(rooms) {
-            rooms.forEach(async room => {
-                if(room.name === theRoom) {
-                    exist = true;
+        // const rooms = await Chat.find();
+        // if(rooms) {
+        //     rooms.forEach(async room => {
+        //         if(room.name === theRoom) {
+        //             exist = true;
     
-                    room.chats.push(data);
-                    await room.save();
-                }
-            })
-        }
+        //             room.chats.push(data);
+        //             await room.save();
+        //         }
+        //     })
+        // }
 
-        if(! exist) {
-            let newChat = new Chat({
-                name: theRoom,
-                chats: [data],
-            })
-            await newChat.save();
-        }
+        // If in past we didnt have history chat for this room //
+        // if(! exist) {
+        //     let newChat = new Chat({
+        //         name: theRoom,
+        //         chats: [data],
+        //     })
+        //     await newChat.save();
+        // }
 
-        io.to(theRoom).emit('newMessage', data);
+        // console.log("sendMessage to -->", `${rooms[1]}:${rooms[2]}`, `${rooms[2]}:${rooms[1]}`);
+        io.to(rooms[1]).to(rooms[2]).emit('newMessage', data);
     })
 
     socket.on('roomJoin', async (data) => {
-        socket.leave(data.roomToLeave);
-        socket.join(data.roomToJoin);
+        // Leave from previous room if exist
+        if(data.roomToLeave) {
+            socket.leave(`${data.theUser}:${data.roomToLeave}`);
+            socket.leave(`${data.roomToLeave}:${data.theUser}`);
+        }
 
+        // Join to new room
+        console.log("joinChat", `${data.theUser}:${data.roomToJoin}`, `${data.roomToJoin}:${data.theUser}`);
         socket.join(`${data.theUser}:${data.roomToJoin}`);
         socket.join(`${data.roomToJoin}:${data.theUser}`);
 
-        let roomData = [];
-        let usersInChat = {};
-        usersInChat.theUser = data.theUser;
-        usersInChat.secondUser = data.roomToJoin;
+        // let roomData = [];
+        // let usersInChat = {};
+        // usersInChat.theUser = data.theUser;
+        // usersInChat.secondUser = data.roomToJoin;
 
-        const rooms = await Chat.find();
-        rooms.forEach(room => {
-            if(room.name === data.roomToJoin) {
-                roomData = room.chats;
-            }
-        })
+        // const rooms = await Chat.find();
+        // rooms.forEach(room => {
+        //     if(room.name === data.roomToJoin) {
+        //         roomData = room.chats;
+        //     }
+        // })
 
         socket.emit('clearMsg');
-        socket.emit('historyCatchUp', roomData);
+        // socket.emit('historyCatchUp', roomData);
     })
 })
 
