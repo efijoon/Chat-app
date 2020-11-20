@@ -32,7 +32,7 @@ function sendMessage() {
 	console.log(senderName);
 	if(msg == '') return;
 
-	socket.emit('newMessage', { msg, id: socket.id, senderName });
+	socket.emit('newMessage', { msg, senderName });
 	$('#textbox').val('');
 }
 
