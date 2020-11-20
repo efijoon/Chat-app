@@ -1,5 +1,5 @@
 const socket = io('http://localhost:3000');
-
+const messages = document.getElementById('messagesBox');
 const chatbox = $('.messages > ul');
 
 socket.on('newMessage', (data) => {
@@ -20,7 +20,6 @@ socket.on('newMessage', (data) => {
 		`)
 	}
 
-	const messages = document.getElementById('messagesBox');
 	messages.scroll(10, messages.scrollHeight);
 });
 
@@ -94,6 +93,8 @@ socket.on('clearMsg', function () {
 socket.on('historyCatchUp', function (data) {
 	buildChat(data);
 	$(chatbox).innerHTML = data;
+
+	console.log('Here');
 })
 
 function buildChat(data) {
@@ -116,4 +117,5 @@ function buildChat(data) {
 			`)
 		}
 	})
+	messages.scroll(10, messages.scrollHeight);
 }
